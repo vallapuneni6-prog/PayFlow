@@ -1,5 +1,11 @@
 {
-  "name": "PayFlow - Monthly Payment Tracker",
-  "description": "A streamlined mobile-first application to track recurring monthly income and expenses. Automatically resets each month to help you stay on top of your financial commitments with AI-powered insights.",
+  "name": "PayFlow Pro",
+  "short_name": "PayFlow",
+  "description": "Smart recurring payment tracker with automatic monthly resets and AI-driven financial insights.",
+  "version": "1.0.0",
+  "theme_color": "#2563eb",
+  "background_color": "#f3f4f6",
+  "display": "standalone",
+  "orientation": "portrait",
   "requestFramePermissions": []
 }

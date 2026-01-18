@@ -12,6 +12,6 @@ export interface PaymentItem {
 
 export interface AppState {
   payments: PaymentItem[];
-  completedIds: string[]; // IDs completed in the current active month
-  lastResetMonth: string; // Tracks the last month (YYYY-MM) the app was opened
+  completedIds: string[]; // IDs marked as "done" for the CURRENT month only
+  lastResetMonth: string; // Used to detect month transitions for auto-reset
 }

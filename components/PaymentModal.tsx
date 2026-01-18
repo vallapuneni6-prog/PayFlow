@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PaymentType, PaymentItem } from '../types';
 import { X } from 'lucide-react';
 
@@ -7,14 +7,31 @@ interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAdd: (item: Omit<PaymentItem, 'id'>) => void;
+  editingItem?: PaymentItem | null;
 }
 
-export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onAdd }) => {
+export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onAdd, editingItem }) => {
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
   const [type, setType] = useState<PaymentType>('PAY');
   const [dueDate, setDueDate] = useState('1');
   const [category, setCategory] = useState('General');
+
+  useEffect(() => {
+    if (editingItem) {
+      setTitle(editingItem.title);
+      setAmount(editingItem.amount.toString());
+      setType(editingItem.type);
+      setDueDate(editingItem.dueDate.toString());
+      setCategory(editingItem.category);
+    } else {
+      setTitle('');
+      setAmount('');
+      setType('PAY');
+      setDueDate('1');
+      setCategory('General');
+    }
+  }, [editingItem, isOpen]);
 
   if (!isOpen) return null;
 
@@ -30,9 +47,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onA
       category
     });
     
-    // Reset
-    setTitle('');
-    setAmount('');
     onClose();
   };
 
@@ -40,7 +54,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onA
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 transform transition-transform animate-slide-up">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-gray-900">Add Recurring Payment</h2>
+          <h2 className="text-xl font-bold text-gray-900">
+            {editingItem ? 'Edit Recurring Item' : 'Add Recurring Item'}
+          </h2>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full text-gray-500">
             <X size={20} />
           </button>
@@ -72,7 +88,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onA
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Rent, Salary, Netflix"
+              placeholder="e.g. Rent, Salary, Internet"
               className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
             />
           </div>
@@ -91,7 +107,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onA
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Day of Month</label>
+              <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Due Day</label>
               <select
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
@@ -116,8 +132,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onA
               <option value="Food">Food</option>
               <option value="Subscription">Subscription</option>
               <option value="Work">Work</option>
-              <option value="Health">Health</option>
               <option value="Transport">Transport</option>
+              <option value="Leisure">Leisure</option>
               <option value="General">General</option>
             </select>
           </div>
@@ -126,7 +142,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onA
             type="submit"
             className="w-full py-4 bg-gray-900 text-white font-bold rounded-2xl hover:bg-gray-800 transition-colors shadow-lg shadow-gray-200 mt-4"
           >
-            Save Recurring Payment
+            {editingItem ? 'Update Item' : 'Save Recurring Item'}
           </button>
         </form>
       </div>
