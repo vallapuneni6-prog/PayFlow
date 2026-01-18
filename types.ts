@@ -10,12 +10,8 @@ export interface PaymentItem {
   category: string;
 }
 
-export interface MonthRecord {
-  monthKey: string; // YYYY-MM
-  completedIds: string[];
-}
-
 export interface AppState {
   payments: PaymentItem[];
-  history: MonthRecord[];
+  completedIds: string[]; // IDs completed in the current active month
+  lastResetMonth: string; // Tracks the last month (YYYY-MM) the app was opened
 }

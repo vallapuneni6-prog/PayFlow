@@ -3,7 +3,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>PayFlow</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -35,6 +38,7 @@
     body {
       font-family: 'Inter', sans-serif;
       background-color: #f3f4f6;
+      overscroll-behavior-y: contain; /* Prevents pull-to-refresh on mobile web */
     }
     .custom-scrollbar::-webkit-scrollbar {
       width: 4px;
@@ -47,7 +51,6 @@
       border-radius: 10px;
     }
     
-    /* Animation helper classes */
     .animate-in {
       animation-fill-mode: both;
     }
@@ -73,6 +76,11 @@
       from { transform: translateX(10px); opacity: 0; }
       to { transform: translateX(0); opacity: 1; }
     }
+
+    /* Fix for iOS safe areas */
+    .pb-safe {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
   </style>
 <script type="importmap">
 {
@@ -86,7 +94,7 @@
 }
 </script>
 </head>
-<body>
+<body class="select-none">
   <div id="root"></div>
 </body>
 </html>

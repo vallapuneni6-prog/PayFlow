@@ -1,15 +1,12 @@
 
-import { AppState, PaymentItem, MonthRecord } from '../types';
+import { AppState } from '../types';
 
-const STORAGE_KEY = 'payflow_data';
+const STORAGE_KEY = 'payflow_data_v2';
 
 const DEFAULT_STATE: AppState = {
-  payments: [
-    { id: '1', title: 'Monthly Salary', amount: 5000, type: 'RECEIVE', dueDate: 1, category: 'Work' },
-    { id: '2', title: 'House Rent', amount: 1500, type: 'PAY', dueDate: 5, category: 'Housing' },
-    { id: '3', title: 'Internet Bill', amount: 60, type: 'PAY', dueDate: 10, category: 'Utilities' },
-  ],
-  history: []
+  payments: [],
+  completedIds: [],
+  lastResetMonth: ''
 };
 
 export const saveState = (state: AppState) => {
@@ -20,7 +17,8 @@ export const loadState = (): AppState => {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (!saved) return DEFAULT_STATE;
   try {
-    return JSON.parse(saved);
+    const parsed = JSON.parse(saved);
+    return { ...DEFAULT_STATE, ...parsed };
   } catch (e) {
     return DEFAULT_STATE;
   }
