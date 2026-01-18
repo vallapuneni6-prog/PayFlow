@@ -1,0 +1,5 @@
+{
+  "name": "PayFlow - Monthly Payment Tracker",
+  "description": "A streamlined mobile-first application to track recurring monthly income and expenses. Automatically resets each month to help you stay on top of your financial commitments with AI-powered insights.",
+  "requestFramePermissions": []
+}
