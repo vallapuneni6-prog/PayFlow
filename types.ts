@@ -2,6 +2,13 @@
 export type PaymentType = 'RECEIVE' | 'PAY';
 export type ThemeType = 'light' | 'dark';
 
+export interface AuthUser {
+  name: string;
+  email: string;
+  picture: string;
+  id: string;
+}
+
 export interface PaymentItem {
   id: string;
   title: string;
@@ -13,7 +20,8 @@ export interface PaymentItem {
 
 export interface AppState {
   payments: PaymentItem[];
-  completedIds: string[]; // IDs marked as "done" for the CURRENT month only
-  lastResetMonth: string; // Used to detect month transitions for auto-reset
-  theme: ThemeType; // Persisted user preference
+  completedIds: string[]; 
+  lastResetMonth: string;
+  theme: ThemeType;
+  user?: AuthUser | null;
 }

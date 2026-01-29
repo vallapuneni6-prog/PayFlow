@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,12 +7,26 @@
   <meta name="theme-color" content="#2563eb">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PayFlow">
+  
+  <!-- Permissions Policy to enable Federated Identity features -->
+  <meta http-equiv="Permissions-Policy" content="identity-credentials-get=(self)">
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/584/584026.png">
+  
   <title>PayFlow Pro</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script>
+    // Shim for process.env to prevent ReferenceErrors in standard browser environments
+    window.process = window.process || { env: {} };
+    
     tailwind.config = {
       darkMode: 'class',
       theme: {
@@ -61,6 +76,8 @@
       -webkit-tap-highlight-color: transparent;
       min-height: 100vh;
       transition: background-color 0.3s ease;
+      user-select: none;
+      -webkit-user-select: none;
     }
     .dark body {
       background-color: #020617;
@@ -100,15 +117,18 @@
 {
   "imports": {
     "react": "https://esm.sh/react@^19.2.4",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react-dom": "https://esm.sh/react-dom@^19.2.4",
+    "react-dom/client": "https://esm.sh/react-dom@^19.2.4/client",
     "react/": "https://esm.sh/react@^19.2.4/",
     "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.563.0"
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/"
   }
 }
 </script>
 </head>
 <body class="antialiased">
   <div id="root"></div>
+  <script type="module" src="index.tsx"></script>
 </body>
 </html>

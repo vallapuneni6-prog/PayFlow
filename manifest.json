@@ -1,0 +1,26 @@
+
+{
+  "name": "PayFlow Pro",
+  "short_name": "PayFlow",
+  "description": "Smart recurring payment tracker with automatic monthly resets.",
+  "version": "1.0.0",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#fbfcfe",
+  "theme_color": "#2563eb",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/584/584026.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/584/584026.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
