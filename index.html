@@ -13,6 +13,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           fontFamily: {
@@ -22,6 +23,8 @@
             'slide-up': 'slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
             'fade-in': 'fade-in 0.3s ease-out',
             'scale-in': 'scale-in 0.2s ease-out',
+            'blob': 'blob 20s infinite alternate',
+            'float': 'float 6s ease-in-out infinite',
           },
           keyframes: {
             'slide-up': {
@@ -35,6 +38,16 @@
             'scale-in': {
               '0%': { transform: 'scale(0.95)', opacity: '0' },
               '100%': { transform: 'scale(1)', opacity: '1' },
+            },
+            'blob': {
+              '0%': { transform: 'translate(0px, 0px) scale(1)' },
+              '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+              '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+              '100%': { transform: 'translate(0px, 0px) scale(1)' },
+            },
+            'float': {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-10px)' },
             }
           }
         }
@@ -43,9 +56,14 @@
   </script>
   <style>
     body {
-      background-color: #f8fafc;
+      background-color: #fbfcfe;
       overscroll-behavior-y: none;
       -webkit-tap-highlight-color: transparent;
+      min-height: 100vh;
+      transition: background-color 0.3s ease;
+    }
+    .dark body {
+      background-color: #020617;
     }
     .custom-scrollbar::-webkit-scrollbar {
       width: 0px;
@@ -54,31 +72,38 @@
       padding-bottom: env(safe-area-inset-bottom);
     }
     .glass {
-      background: rgba(255, 255, 255, 0.8);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      background: rgba(255, 255, 255, 0.65);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
     }
-    .income-gradient {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    }
-    .expense-gradient {
-      background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+    .dark .glass {
+      background: rgba(15, 23, 42, 0.65);
+      border-color: rgba(255, 255, 255, 0.05);
     }
     .app-container {
       max-width: 500px;
       margin: 0 auto;
       min-height: 100vh;
       position: relative;
+      background: transparent;
+    }
+    .noise-bg {
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+      opacity: 0.03;
+      pointer-events: none;
+    }
+    .dark .noise-bg {
+      opacity: 0.05;
     }
   </style>
 <script type="importmap">
 {
   "imports": {
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "@google/genai": "https://esm.sh/@google/genai@^1.37.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0"
   }
 }
 </script>

@@ -3,10 +3,12 @@ import { AppState } from '../types';
 
 const STORAGE_KEY = 'payflow_data_v2';
 
+// Added missing 'theme' property to satisfy the AppState interface requirement
 const DEFAULT_STATE: AppState = {
   payments: [],
   completedIds: [],
-  lastResetMonth: ''
+  lastResetMonth: '',
+  theme: 'light'
 };
 
 export const saveState = (state: AppState) => {
