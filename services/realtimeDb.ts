@@ -12,7 +12,8 @@ const INITIAL_STATE: AppState = {
   completedIds: [],
   lastResetMonth: getMonthKey(),
   theme: 'light',
-  user: null
+  user: null,
+  googleClientId: ''
 };
 
 const checkAndPerformReset = (state: AppState): AppState | null => {

@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Dashboard } from './components/Dashboard.tsx';
 import { PaymentList } from './components/PaymentList.tsx';
 import { PaymentModal } from './components/PaymentModal.tsx';
+import { Settings } from './components/Settings.tsx';
 import { BottomNav, TabType } from './components/BottomNav.tsx';
 import { AppState, PaymentItem, PaymentType, AuthUser } from './types.ts';
 import { RealtimeDB } from './services/realtimeDb.ts';
@@ -18,11 +19,10 @@ const App: React.FC = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
-  // Configuration - Replace with your real client ID from Google Cloud Console
-  const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
-
   // Initialize Google Sign-In
   useEffect(() => {
+    if (!state?.googleClientId) return;
+
     const handleCredentialResponse = (response: any) => {
       try {
         const payload = JSON.parse(atob(response.credential.split('.')[1]));
@@ -33,25 +33,23 @@ const App: React.FC = () => {
           picture: payload.picture
         };
         
-        if (state) {
-          RealtimeDB.dispatch({ ...state, user: userData });
-        }
+        RealtimeDB.dispatch({ ...state, user: userData });
       } catch (e) {
         console.error("Error decoding Google token", e);
       }
     };
 
     const initGsi = () => {
-      if ((window as any).google && GOOGLE_CLIENT_ID && !GOOGLE_CLIENT_ID.startsWith("YOUR_GOOGLE_CLIENT_ID")) {
+      if ((window as any).google && state.googleClientId) {
         try {
           (window as any).google.accounts.id.initialize({
-            client_id: GOOGLE_CLIENT_ID,
+            client_id: state.googleClientId,
             callback: handleCredentialResponse,
             auto_select: true,
             use_fedcm_for_prompt: false 
           });
           
-          if (state && !state.user) {
+          if (!state.user) {
             (window as any).google.accounts.id.prompt();
           }
         } catch (err) {
@@ -68,7 +66,7 @@ const App: React.FC = () => {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [state?.user === null, GOOGLE_CLIENT_ID]);
+  }, [state?.user === null, state?.googleClientId]);
 
   useEffect(() => {
     const unsubscribe = RealtimeDB.subscribe((newState) => {
@@ -168,7 +166,7 @@ const App: React.FC = () => {
                 <div className="flex flex-col gap-2 w-full max-w-[200px]">
                   <button 
                     onClick={() => {
-                      if (GOOGLE_CLIENT_ID.startsWith("YOUR_GOOGLE")) {
+                      if (!state.googleClientId) {
                         handleDemoLogin();
                       } else {
                         (window as any).google?.accounts.id.prompt();
@@ -177,10 +175,15 @@ const App: React.FC = () => {
                     className="px-6 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-full text-sm font-bold flex items-center justify-center gap-2 shadow-sm hover:scale-105 active:scale-95 transition-all dark:text-white"
                   >
                     <img src="https://www.google.com/favicon.ico" className="w-4 h-4" alt="Google" />
-                    {GOOGLE_CLIENT_ID.startsWith("YOUR_GOOGLE") ? "Demo Sign In" : "Google Sign In"}
+                    {!state.googleClientId ? "Demo Sign In" : "Google Sign In"}
                   </button>
-                  {GOOGLE_CLIENT_ID.startsWith("YOUR_GOOGLE") && (
-                    <p className="text-[10px] text-slate-400 italic">Google Login requires a valid Client ID</p>
+                  {!state.googleClientId && (
+                    <button 
+                      onClick={() => setActiveTab('SETTINGS')}
+                      className="text-[10px] text-blue-500 font-bold hover:underline"
+                    >
+                      Configure real Google Login
+                    </button>
                   )}
                 </div>
               </div>
@@ -226,6 +229,8 @@ const App: React.FC = () => {
             <PaymentList type="PAY" items={state.payments} completedIds={state.completedIds} onToggle={toggleStatus} onDelete={(id) => RealtimeDB.dispatch({ ...state, payments: state.payments.filter(p => p.id !== id) })} onEdit={(item) => { setEditingItem(item); setIsModalOpen(true); }} />
           </div>
         );
+      case 'SETTINGS':
+        return <Settings state={state} />;
     }
   };
 
@@ -257,7 +262,7 @@ const App: React.FC = () => {
                 if (state.user) {
                   setShowProfileMenu(!showProfileMenu);
                 } else {
-                  if (GOOGLE_CLIENT_ID.startsWith("YOUR_GOOGLE")) {
+                  if (!state.googleClientId) {
                     handleDemoLogin();
                   } else {
                     (window as any).google?.accounts.id.prompt();
@@ -297,14 +302,16 @@ const App: React.FC = () => {
         {renderContent()}
       </main>
 
-      <div className="fixed bottom-28 right-6 z-50">
-        <button 
-          onClick={() => { setEditingItem(null); setIsModalOpen(true); }}
-          className={`w-16 h-16 ${activeTab === 'RECEIVE' ? 'bg-emerald-600' : activeTab === 'PAY' ? 'bg-rose-600' : 'bg-slate-900 dark:bg-blue-600'} text-white flex items-center justify-center rounded-3xl shadow-2xl active:scale-95 transition-all border-4 border-white dark:border-slate-900`}
-        >
-          <Plus size={32} strokeWidth={3} />
-        </button>
-      </div>
+      {activeTab !== 'SETTINGS' && (
+        <div className="fixed bottom-28 right-6 z-50">
+          <button 
+            onClick={() => { setEditingItem(null); setIsModalOpen(true); }}
+            className={`w-16 h-16 ${activeTab === 'RECEIVE' ? 'bg-emerald-600' : activeTab === 'PAY' ? 'bg-rose-600' : 'bg-slate-900 dark:bg-blue-600'} text-white flex items-center justify-center rounded-3xl shadow-2xl active:scale-95 transition-all border-4 border-white dark:border-slate-900`}
+          >
+            <Plus size={32} strokeWidth={3} />
+          </button>
+        </div>
+      )}
 
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
 

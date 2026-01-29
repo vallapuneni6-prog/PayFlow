@@ -24,4 +24,5 @@ export interface AppState {
   lastResetMonth: string;
   theme: ThemeType;
   user?: AuthUser | null;
+  googleClientId?: string;
 }
