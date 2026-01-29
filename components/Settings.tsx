@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Shield, Key, ExternalLink, Moon, Sun, Trash2, ShieldCheck, CheckCircle } from 'lucide-react';
+import { Shield, Moon, Sun, Trash2, ShieldCheck, CheckCircle, Globe } from 'lucide-react';
 import { RealtimeDB } from '../services/realtimeDb.ts';
 import { AppState } from '../types.ts';
 
@@ -9,10 +9,6 @@ interface SettingsProps {
 }
 
 export const Settings: React.FC<SettingsProps> = ({ state }) => {
-  const updateClientId = (id: string) => {
-    RealtimeDB.dispatch({ ...state, googleClientId: id.trim() });
-  };
-
   const clearData = () => {
     if (confirm("Are you sure? This will delete all your local payments and reset the app.")) {
       RealtimeDB.dispatch({
@@ -20,8 +16,7 @@ export const Settings: React.FC<SettingsProps> = ({ state }) => {
         completedIds: [],
         lastResetMonth: state.lastResetMonth,
         theme: state.theme,
-        user: null,
-        googleClientId: state.googleClientId
+        user: null
       });
     }
   };
@@ -34,47 +29,35 @@ export const Settings: React.FC<SettingsProps> = ({ state }) => {
       </header>
 
       <section className="glass rounded-[2rem] p-6 border border-white dark:border-white/5 space-y-4">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-3 text-blue-600 dark:text-blue-400">
-            <Key size={20} />
-            <h3 className="font-bold text-slate-900 dark:text-white">Cloud Activation</h3>
-          </div>
-          {state.googleClientId && (
-            <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-500 uppercase tracking-widest">
-              <CheckCircle size={10} /> Active
-            </span>
-          )}
+        <div className="flex items-center gap-3 text-blue-600 dark:text-blue-400 mb-2">
+          <Globe size={20} />
+          <h3 className="font-bold text-slate-900 dark:text-white">Account Info</h3>
         </div>
         
-        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-          The <strong>Google Client ID</strong> acts as the secure bridge between your specific Vercel URL and Google's Login system.
-        </p>
-
-        <div className="space-y-2">
-          <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest">Connection Key (Client ID)</label>
-          <input 
-            type="text"
-            placeholder="xxxx-xxxx.apps.googleusercontent.com"
-            value={state.googleClientId || ''}
-            onChange={(e) => updateClientId(e.target.value)}
-            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-xs dark:text-white font-mono"
-          />
+        <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full border border-white dark:border-slate-700 overflow-hidden">
+              <img src={state.user?.picture} className="w-full h-full object-cover" alt="Avatar" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{state.user?.name}</p>
+              <p className="text-[10px] text-slate-500 truncate">{state.user?.email}</p>
+            </div>
+          </div>
+          <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-500 uppercase tracking-widest shrink-0">
+            <CheckCircle size={10} /> Synced
+          </span>
         </div>
-
-        <a 
-          href="https://console.cloud.google.com/" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 text-[10px] font-bold text-blue-500 hover:underline"
-        >
-          Manage in Google Cloud Console <ExternalLink size={12} />
-        </a>
+        
+        <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-relaxed font-medium">
+          Your preferences are linked to your account.
+        </p>
       </section>
 
       <section className="glass rounded-[2rem] p-6 border border-white dark:border-white/5 space-y-4">
         <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400 mb-2">
           <Shield size={20} />
-          <h3 className="font-bold text-slate-900 dark:text-white">Storage & Data</h3>
+          <h3 className="font-bold text-slate-900 dark:text-white">Data Management</h3>
         </div>
 
         <button 
@@ -83,7 +66,7 @@ export const Settings: React.FC<SettingsProps> = ({ state }) => {
         >
           <div className="flex items-center gap-3">
             <Trash2 size={18} />
-            <span className="text-sm font-bold">Wipe App Data</span>
+            <span className="text-sm font-bold">Wipe Local Data</span>
           </div>
         </button>
       </section>
@@ -91,7 +74,7 @@ export const Settings: React.FC<SettingsProps> = ({ state }) => {
       <div className="text-center pt-4">
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800/50 rounded-full border border-slate-200 dark:border-white/5">
           <ShieldCheck size={14} className="text-slate-400" />
-          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase tracking-[0.1em]">PayFlow Pro v1.0.0</span>
+          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase tracking-[0.1em]">PayFlow Pro v1.1.0</span>
         </div>
       </div>
     </div>

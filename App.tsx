@@ -5,10 +5,10 @@ import { PaymentList } from './components/PaymentList.tsx';
 import { PaymentModal } from './components/PaymentModal.tsx';
 import { Settings } from './components/Settings.tsx';
 import { BottomNav, TabType } from './components/BottomNav.tsx';
-import { AppState, PaymentItem, PaymentType, AuthUser } from './types.ts';
+import { AppState, PaymentItem, AuthUser } from './types.ts';
 import { RealtimeDB } from './services/realtimeDb.ts';
 import { getFinancialAdvice } from './services/geminiService.ts';
-import { Plus, Sparkles, LogIn, Key, Globe, ExternalLink, Loader2, Sun, Moon, LogOut, User, ShieldCheck, HelpCircle } from 'lucide-react';
+import { Plus, Sparkles, Loader2, Sun, Moon, LogOut, User, ShieldCheck } from 'lucide-react';
 
 const App: React.FC = () => {
   const [state, setState] = useState<AppState | null>(null);
@@ -17,53 +17,7 @@ const App: React.FC = () => {
   const [editingItem, setEditingItem] = useState<PaymentItem | null>(null);
   const [aiTips, setAiTips] = useState<string[]>([]);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [isGsiLoaded, setIsGsiLoaded] = useState(false);
-
-  // Initialize Google Sign-In
-  useEffect(() => {
-    if (!state?.googleClientId) return;
-
-    const handleCredentialResponse = (response: any) => {
-      try {
-        const payload = JSON.parse(atob(response.credential.split('.')[1]));
-        const userData: AuthUser = {
-          id: payload.sub,
-          name: payload.name,
-          email: payload.email,
-          picture: payload.picture
-        };
-        
-        RealtimeDB.dispatch({ ...state, user: userData });
-      } catch (e) {
-        console.error("Error decoding Google token", e);
-      }
-    };
-
-    const initGsi = () => {
-      if ((window as any).google && state.googleClientId) {
-        try {
-          (window as any).google.accounts.id.initialize({
-            client_id: state.googleClientId,
-            callback: handleCredentialResponse,
-            auto_select: true,
-            use_fedcm_for_prompt: false 
-          });
-          setIsGsiLoaded(true);
-        } catch (err) {
-          console.error("GSI Init Error:", err);
-        }
-      }
-    };
-
-    const interval = setInterval(() => {
-      if ((window as any).google) {
-        initGsi();
-        clearInterval(interval);
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [state?.googleClientId]);
+  const [showMockPicker, setShowMockPicker] = useState(false);
 
   useEffect(() => {
     const unsubscribe = RealtimeDB.subscribe((newState) => {
@@ -89,7 +43,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (state && aiTips.length === 0 && state.user) refreshAdvice();
-  }, [state === null, state?.user]);
+  }, [state?.user, aiTips.length, refreshAdvice]);
 
   if (!state) {
     return (
@@ -132,9 +86,14 @@ const App: React.FC = () => {
     setEditingItem(null);
   };
 
+  const loginAs = (name: string, email: string, pic: string) => {
+    const user: AuthUser = { id: crypto.randomUUID(), name, email, picture: pic };
+    RealtimeDB.dispatch({ ...state, user });
+    setShowMockPicker(false);
+  };
+
   const renderLoginScreen = () => (
-    <div className="flex flex-col items-center justify-center min-h-screen px-6 py-12 animate-fade-in relative overflow-hidden">
-      {/* Background Decor */}
+    <div className="flex flex-col items-center justify-center min-h-screen px-6 py-12 animate-fade-in relative overflow-hidden bg-white dark:bg-slate-950 text-slate-900 dark:text-white">
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[30%] bg-blue-500/10 dark:bg-blue-600/5 blur-[120px] rounded-full -z-10" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[30%] bg-indigo-500/10 dark:bg-indigo-600/5 blur-[120px] rounded-full -z-10" />
       
@@ -142,81 +101,59 @@ const App: React.FC = () => {
         P
       </div>
       
-      <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter text-center mb-2">PayFlow Pro</h1>
+      <h1 className="text-4xl font-black tracking-tighter text-center mb-2">PayFlow Pro</h1>
       <p className="text-slate-500 dark:text-slate-400 text-center mb-12 max-w-xs font-semibold leading-tight">
-        Your monthly expenses, <span className="text-blue-600">synced</span> and <span className="text-blue-600">automated</span>.
+        Your monthly payments, <span className="text-blue-600">securely synced</span>.
       </p>
 
-      {!state.googleClientId ? (
-        <div className="w-full max-w-sm glass border border-white dark:border-white/5 p-8 rounded-[3rem] shadow-2xl space-y-6 animate-slide-up">
-          <div className="space-y-2">
-            <h3 className="font-black text-xl text-slate-900 dark:text-white tracking-tight">App Activation</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-              To use Google Login on your personal domain, enter your Client ID from the Google Cloud Console. This connects your app to Google's Email system.
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            <div className="relative">
-              <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-              <input 
-                type="text"
-                placeholder="Google Client ID"
-                className="w-full pl-12 pr-5 py-4 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none text-sm dark:text-white font-mono placeholder:font-sans"
-                onBlur={(e) => RealtimeDB.dispatch({ ...state, googleClientId: e.target.value.trim() })}
-              />
-            </div>
-            
-            <a 
-              href="https://console.cloud.google.com/" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 py-3 w-full bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold rounded-2xl hover:bg-slate-800 transition-colors shadow-lg"
-            >
-              Get ID from Cloud Console <ExternalLink size={14} />
-            </a>
-          </div>
-
-          <div className="pt-2 flex items-start gap-3 bg-blue-50/50 dark:bg-blue-900/10 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/20">
-            <HelpCircle className="text-blue-500 shrink-0 mt-0.5" size={16} />
-            <p className="text-[10px] text-blue-700 dark:text-blue-400 font-bold leading-normal">
-              Note: This is a developer setting required because you are hosting the app yourself.
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="w-full max-w-sm space-y-4 animate-scale-in">
-          <div className="text-center mb-4">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-100 dark:border-emerald-900/30">
-              <ShieldCheck size={12} /> App Activated
-            </span>
-          </div>
-          
-          <button 
-            onClick={() => {
-              if (isGsiLoaded) {
-                (window as any).google?.accounts.id.prompt();
-              }
-            }}
-            className="w-full bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-white/5 py-4 rounded-[2rem] flex items-center justify-center gap-4 shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
-          >
-            <img src="https://www.google.com/favicon.ico" className="w-6 h-6" alt="Google" />
-            <span className="font-black text-slate-900 dark:text-white">Sign in with Email</span>
-          </button>
-          
-          <button 
-            onClick={() => RealtimeDB.dispatch({ ...state, googleClientId: '' })}
-            className="w-full text-center text-[10px] font-black uppercase text-slate-400 dark:text-slate-600 tracking-widest hover:text-blue-500 transition-colors py-2"
-          >
-            Change Activation Key
-          </button>
-        </div>
-      )}
+      <div className="w-full max-w-sm space-y-4 animate-slide-up">
+        <button 
+          onClick={() => setShowMockPicker(true)}
+          className="w-full bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-white/5 py-4 rounded-[2rem] flex items-center justify-center gap-4 shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
+        >
+          <img src="https://www.google.com/favicon.ico" className="w-6 h-6" alt="Google" />
+          <span className="font-black">Sign in with Google</span>
+        </button>
+      </div>
 
       <div className="mt-16 text-center space-y-1">
         <p className="text-[10px] font-black uppercase text-slate-300 dark:text-slate-700 tracking-[0.2em]">Privacy First Architecture</p>
-        <p className="text-[9px] text-slate-400 dark:text-slate-600 font-medium">Your financial data never leaves your personal cloud.</p>
+        <p className="text-[9px] text-slate-400 dark:text-slate-600 font-medium">Your financial data stays with your account.</p>
       </div>
+
+      {showMockPicker && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-xs rounded-[2.5rem] p-8 shadow-2xl animate-scale-in">
+            <div className="flex flex-col items-center mb-6">
+              <img src="https://www.google.com/favicon.ico" className="w-8 h-8 mb-4" alt="Google" />
+              <h2 className="text-lg font-black text-slate-900 dark:text-white text-center">Choose an account</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">to continue to PayFlow Pro</p>
+            </div>
+            
+            <div className="space-y-3">
+              <button 
+                onClick={() => loginAs("User", "user@gmail.com", "https://api.dicebear.com/7.x/avataaars/svg?seed=User")}
+                className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border border-transparent hover:border-slate-100 dark:hover:border-white/5 text-left"
+              >
+                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
+                   <User size={20} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold text-slate-900 dark:text-white truncate">Google User</p>
+                  <p className="text-[10px] text-slate-500 truncate">user@gmail.com</p>
+                </div>
+              </button>
+            </div>
+
+            <button 
+              onClick={() => setShowMockPicker(false)}
+              className="mt-6 w-full py-3 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 
