@@ -8,7 +8,7 @@ import { BottomNav, TabType } from './components/BottomNav.tsx';
 import { AppState, PaymentItem, AuthUser } from './types.ts';
 import { RealtimeDB } from './services/realtimeDb.ts';
 import { getFinancialAdvice } from './services/geminiService.ts';
-import { Plus, Sparkles, Loader2, Sun, Moon, LogOut, User, Shield, Wallet, Mail, Facebook, PlusCircle, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Plus, Sparkles, Loader2, Sun, Moon, LogOut, Shield, Wallet, Mail, Facebook, ArrowLeft } from 'lucide-react';
 
 const App: React.FC = () => {
   const [state, setState] = useState<AppState | null>(null);
@@ -19,10 +19,46 @@ const App: React.FC = () => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   
   // Login UI states
-  const [showAccountPicker, setShowAccountPicker] = useState(false);
-  const [showAddAccount, setShowAddAccount] = useState(false);
-  const [newUserName, setNewUserName] = useState('');
-  const [newUserEmail, setNewUserEmail] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  // Helper to decode Google JWT
+  const decodeJwt = (token: string) => {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+      return JSON.parse(jsonPayload);
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const handleGoogleResponse = useCallback((response: any) => {
+    setIsLoggingIn(true);
+    const payload = decodeJwt(response.credential);
+    if (payload) {
+      const user: AuthUser = {
+        id: payload.sub,
+        name: payload.name,
+        email: payload.email,
+        picture: payload.picture
+      };
+      
+      // Update state and persistence
+      if (state) {
+        const accounts = state.savedAccounts || [];
+        const exists = accounts.find(a => a.email === user.email);
+        const updatedAccounts = exists ? accounts : [user, ...accounts];
+        
+        RealtimeDB.dispatch({ 
+          ...state, 
+          user, 
+          savedAccounts: updatedAccounts 
+        });
+      }
+    }
+    setIsLoggingIn(false);
+  }, [state]);
 
   useEffect(() => {
     const unsubscribe = RealtimeDB.subscribe((newState) => {
@@ -36,6 +72,34 @@ const App: React.FC = () => {
 
     return () => unsubscribe();
   }, []);
+
+  // Initialize Google Identity Services
+  useEffect(() => {
+    if (state && !state.user && (window as any).google) {
+      const google = (window as any).google;
+      google.accounts.id.initialize({
+        client_id: "715091720235-dummy-client-id.apps.googleusercontent.com", // Placeholder
+        callback: handleGoogleResponse,
+        auto_select: true,
+        cancel_on_tap_outside: false
+      });
+      
+      // Prompt One Tap
+      google.accounts.id.prompt();
+
+      // Also render the button in the login screen if it exists
+      const btn = document.getElementById('google-signin-btn');
+      if (btn) {
+        google.accounts.id.renderButton(btn, { 
+          type: 'standard', 
+          theme: state.theme === 'dark' ? 'filled_blue' : 'outline', 
+          size: 'large', 
+          shape: 'pill',
+          width: btn.clientWidth
+        });
+      }
+    }
+  }, [state?.user, state?.theme, handleGoogleResponse]);
 
   const refreshAdvice = useCallback(async () => {
     if (!state || state.payments.length === 0) {
@@ -91,40 +155,14 @@ const App: React.FC = () => {
     setEditingItem(null);
   };
 
-  const loginWithAccount = (user: AuthUser) => {
-    // Add to saved accounts if not already there
-    const accounts = state.savedAccounts || [];
-    const exists = accounts.find(a => a.email === user.email);
-    const updatedAccounts = exists ? accounts : [user, ...accounts];
-    
-    RealtimeDB.dispatch({ 
-      ...state, 
-      user, 
-      savedAccounts: updatedAccounts 
-    });
-    setShowAccountPicker(false);
-    setShowAddAccount(false);
-  };
-
-  const handleAddNewAccount = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newUserName || !newUserEmail) return;
-    
-    const newUser: AuthUser = {
-      id: crypto.randomUUID(),
-      name: newUserName,
-      email: newUserEmail,
-      picture: `https://api.dicebear.com/7.x/avataaars/svg?seed=${newUserEmail}`
-    };
-    
-    loginWithAccount(newUser);
-    setNewUserName('');
-    setNewUserEmail('');
-  };
-
   const renderLoginScreen = () => (
-    <div className="min-h-screen bg-white dark:bg-slate-950 flex flex-col items-center animate-fade-in">
-      {/* Header section from screenshot */}
+    <div className="min-h-screen bg-white dark:bg-slate-950 flex flex-col items-center animate-fade-in relative">
+      {isLoggingIn && (
+        <div className="absolute inset-0 z-[200] bg-white/50 dark:bg-slate-950/50 backdrop-blur-sm flex items-center justify-center">
+          <Loader2 className="animate-spin text-blue-600" size={48} />
+        </div>
+      )}
+      
       <div className="w-full h-1/3 bg-[#00c853] dark:bg-emerald-600 flex items-center justify-center relative overflow-hidden">
         <div className="relative z-10 p-8 bg-white/20 rounded-[2.5rem] backdrop-blur-sm border border-white/30 shadow-2xl animate-float">
           <div className="relative">
@@ -134,9 +172,6 @@ const App: React.FC = () => {
             </div>
           </div>
         </div>
-        {/* Abstract background shapes */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-400/20 rounded-full -ml-16 -mb-16 blur-2xl" />
       </div>
 
       <div className="flex-1 w-full max-w-sm px-8 pt-20 pb-12 flex flex-col items-center">
@@ -145,19 +180,11 @@ const App: React.FC = () => {
         </h1>
 
         <div className="w-full space-y-4">
-          <button 
-            onClick={() => setShowAccountPicker(true)}
-            className="w-full bg-[#2196f3] text-white py-4 rounded-full flex items-center justify-center relative shadow-lg active:scale-95 transition-all overflow-hidden"
-          >
-            <div className="absolute left-2 bg-white w-12 h-12 rounded-full flex items-center justify-center">
-              <img src="https://www.google.com/favicon.ico" className="w-6 h-6" alt="G" />
-            </div>
-            <span className="font-bold text-xs tracking-wider uppercase pl-6">Connect with Google</span>
-          </button>
+          {/* Real Google Button Container */}
+          <div id="google-signin-btn" className="w-full h-14"></div>
 
           <button 
-            onClick={() => setShowAccountPicker(true)}
-            className="w-full bg-[#1877f2] text-white py-4 rounded-full flex items-center justify-center relative shadow-lg active:scale-95 transition-all overflow-hidden"
+            className="w-full bg-[#1877f2] text-white py-4 rounded-full flex items-center justify-center relative shadow-lg active:scale-95 transition-all overflow-hidden opacity-80"
           >
             <div className="absolute left-2 bg-white w-12 h-12 rounded-full flex items-center justify-center">
               <Facebook className="text-[#1877f2] w-7 h-7" fill="currentColor" />
@@ -166,10 +193,6 @@ const App: React.FC = () => {
           </button>
 
           <button 
-            onClick={() => {
-              setShowAccountPicker(true);
-              setShowAddAccount(true);
-            }}
             className="w-full bg-[#00c853] text-white py-4 rounded-full flex items-center justify-center relative shadow-lg active:scale-95 transition-all overflow-hidden"
           >
             <div className="absolute left-2 bg-white w-12 h-12 rounded-full flex items-center justify-center">
@@ -181,97 +204,10 @@ const App: React.FC = () => {
 
         <div className="mt-auto pt-12 text-center">
           <p className="text-[10px] text-slate-400 dark:text-slate-600 leading-relaxed max-w-[280px] mx-auto">
-            By signing up or connecting with the services above you agree to our <a href="#" className="text-blue-500 underline">Terms of Services</a> and acknowledge our <a href="#" className="text-blue-500 underline">Privacy Policy</a> describing how we handle your personal data.
+            By signing up or connecting with the services above you agree to our <a href="#" className="text-blue-500 underline">Terms of Services</a> and acknowledge our <a href="#" className="text-blue-500 underline">Privacy Policy</a>.
           </p>
         </div>
       </div>
-
-      {/* Choose an account dialog - High fidelity recreation */}
-      {showAccountPicker && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-xs rounded-3xl shadow-2xl overflow-hidden animate-scale-in">
-            {showAddAccount ? (
-              <div className="p-8">
-                <div className="flex items-center gap-2 mb-6 text-slate-400 cursor-pointer hover:text-slate-600 transition-colors" onClick={() => setShowAddAccount(false)}>
-                  <ArrowLeft size={16} />
-                  <span className="text-xs font-bold">Back</span>
-                </div>
-                <h2 className="text-lg font-black text-slate-900 dark:text-white mb-2">Create Account</h2>
-                <p className="text-xs text-slate-500 mb-6 font-medium">Use your real Google identity info.</p>
-                <form onSubmit={handleAddNewAccount} className="space-y-4">
-                  <input 
-                    type="text" 
-                    placeholder="Full Name" 
-                    className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-white/5 outline-none focus:ring-2 focus:ring-emerald-500 text-sm dark:text-white"
-                    value={newUserName}
-                    onChange={(e) => setNewUserName(e.target.value)}
-                    required
-                  />
-                  <input 
-                    type="email" 
-                    placeholder="Google Email Address" 
-                    className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-white/5 outline-none focus:ring-2 focus:ring-emerald-500 text-sm dark:text-white"
-                    value={newUserEmail}
-                    onChange={(e) => setNewUserEmail(e.target.value)}
-                    required
-                  />
-                  <button type="submit" className="w-full py-3 bg-[#00c853] text-white font-bold rounded-xl shadow-lg active:scale-95 transition-all">
-                    Sign In
-                  </button>
-                </form>
-              </div>
-            ) : (
-              <div className="p-0">
-                <div className="p-8 flex flex-col items-center">
-                  <div className="w-12 h-12 bg-[#00c853] rounded-xl flex items-center justify-center text-white mb-4 shadow-lg">
-                    <Wallet size={24} />
-                  </div>
-                  <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-1">Choose an account</h2>
-                  <p className="text-xs text-slate-500 mb-6">to continue to Wallet</p>
-
-                  <div className="w-full space-y-1">
-                    {(state.savedAccounts || []).map(acc => (
-                      <button 
-                        key={acc.id}
-                        onClick={() => loginWithAccount(acc)}
-                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left border-b border-slate-50 dark:border-white/5 last:border-0"
-                      >
-                        <img src={acc.picture} className="w-8 h-8 rounded-full border border-slate-100 dark:border-slate-700" alt="" />
-                        <div className="min-w-0">
-                          <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{acc.name}</p>
-                          <p className="text-[10px] text-slate-500 truncate">{acc.email}</p>
-                        </div>
-                      </button>
-                    ))}
-
-                    <button 
-                      onClick={() => setShowAddAccount(true)}
-                      className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left"
-                    >
-                      <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
-                        <PlusCircle size={20} />
-                      </div>
-                      <span className="text-sm font-bold text-slate-600 dark:text-slate-400">Add another account</span>
-                    </button>
-                  </div>
-
-                  <div className="mt-8 pt-6 border-t border-slate-50 dark:border-white/5 w-full">
-                    <p className="text-[10px] text-slate-400 text-center leading-relaxed">
-                      To continue, Google will share your name, email address, and profile picture with Wallet.
-                    </p>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => setShowAccountPicker(false)}
-                  className="w-full py-4 text-xs font-bold text-slate-300 hover:text-slate-500 transition-colors border-t border-slate-50 dark:border-white/5"
-                >
-                  CANCEL
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 
