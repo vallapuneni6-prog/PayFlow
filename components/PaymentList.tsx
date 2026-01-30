@@ -13,10 +13,6 @@ interface PaymentListProps {
 }
 
 export const PaymentList: React.FC<PaymentListProps> = ({ items, completedIds, onToggle, onDelete, onEdit, type }) => {
-  // Sorting: 
-  // 1. Pending (not in completedIds) items first
-  // 2. Completed items at the bottom
-  // 3. Within each group, sort by due date
   const filtered = items.filter(i => i.type === type).sort((a, b) => {
     const aDone = completedIds.includes(a.id);
     const bDone = completedIds.includes(b.id);
@@ -34,6 +30,7 @@ export const PaymentList: React.FC<PaymentListProps> = ({ items, completedIds, o
           {type === 'RECEIVE' ? <ArrowUpRight className="text-emerald-400" size={32} /> : <ArrowDownLeft className="text-rose-400" size={32} />}
         </div>
         <p className="text-slate-500 dark:text-slate-400 font-medium">No recurring {type === 'RECEIVE' ? 'income' : 'bills'} setup.</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 italic">Track once, track monthly.</p>
       </div>
     );
   }
@@ -65,20 +62,20 @@ export const PaymentList: React.FC<PaymentListProps> = ({ items, completedIds, o
             
             <div className="flex-1 min-w-0" onClick={() => onToggle(item.id)}>
               <div className="flex items-center gap-2">
-                <h3 className={`font-bold text-slate-900 dark:text-slate-100 truncate tracking-tight text-base transition-all ${isDone ? 'line-through decoration-2' : ''}`}>
+                <h3 className={`font-bold text-slate-900 dark:text-slate-100 truncate tracking-tight text-base transition-all ${isDone ? 'line-through decoration-2 opacity-50' : ''}`}>
                   {item.title}
                 </h3>
                 {isDone && (
                   <span className="flex items-center gap-1 text-[9px] font-black uppercase tracking-tighter px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-500">
-                    <Lock size={10} /> Settle for Month
+                    <Lock size={10} /> Monthly Done
                   </span>
                 )}
               </div>
               <div className="flex items-center gap-3 mt-1">
-                <span className={`text-[10px] font-bold flex items-center gap-1 uppercase tracking-wider ${isDone ? 'text-slate-400' : 'text-slate-500 dark:text-slate-400'}`}>
+                <span className={`text-[10px] font-bold flex items-center gap-1 uppercase tracking-wider ${isDone ? 'text-slate-400' : 'text-slate-400 dark:text-slate-500'}`}>
                   <Calendar size={12} /> Day {item.dueDate}
                 </span>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase ${isDone ? 'bg-slate-200/50 text-slate-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase ${isDone ? 'bg-slate-200/50 text-slate-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
                   {item.category}
                 </span>
               </div>
@@ -95,16 +92,16 @@ export const PaymentList: React.FC<PaymentListProps> = ({ items, completedIds, o
                 </div>
               </div>
               
-              <div className={`flex flex-col gap-2 ${isDone ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
+              <div className={`flex flex-col gap-2 transition-opacity ${isDone ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'}`}>
                 <button 
                   onClick={(e) => { e.stopPropagation(); onEdit(item); }}
-                  className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400 hover:text-blue-600"
+                  className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400 hover:text-blue-600 transition-all"
                 >
                   <Edit3 size={14} />
                 </button>
                 <button 
                   onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
-                  className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400 hover:text-rose-600"
+                  className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400 hover:text-rose-600 transition-all"
                 >
                   <Trash2 size={14} />
                 </button>
