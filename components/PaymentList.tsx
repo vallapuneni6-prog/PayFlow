@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { PaymentItem, PaymentType } from '../types';
-import { CheckCircle2, Circle, Calendar, Trash2, Edit3, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { CheckCircle2, Circle, Calendar, Trash2, Edit3, ArrowUpRight, ArrowDownLeft, Lock } from 'lucide-react';
 
 interface PaymentListProps {
   items: PaymentItem[];
@@ -12,7 +13,18 @@ interface PaymentListProps {
 }
 
 export const PaymentList: React.FC<PaymentListProps> = ({ items, completedIds, onToggle, onDelete, onEdit, type }) => {
-  const filtered = items.filter(i => i.type === type).sort((a, b) => a.dueDate - b.dueDate);
+  // Filter by type, then sort: 
+  // 1. Uncompleted items first
+  // 2. Then sort both groups by due date
+  const filtered = items.filter(i => i.type === type).sort((a, b) => {
+    const aDone = completedIds.includes(a.id);
+    const bDone = completedIds.includes(b.id);
+    
+    if (aDone && !bDone) return 1;
+    if (!aDone && bDone) return -1;
+    
+    return a.dueDate - b.dueDate;
+  });
 
   if (filtered.length === 0) {
     return (
@@ -27,7 +39,7 @@ export const PaymentList: React.FC<PaymentListProps> = ({ items, completedIds, o
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-10">
       {filtered.map(item => {
         const isDone = completedIds.includes(item.id);
         const actionLabel = type === 'RECEIVE' ? (isDone ? 'Recorded' : 'Record Collection') : (isDone ? 'Paid' : 'Record Payment');
@@ -35,19 +47,19 @@ export const PaymentList: React.FC<PaymentListProps> = ({ items, completedIds, o
         return (
           <div 
             key={item.id}
-            className={`group relative flex items-center p-5 bg-white dark:bg-slate-900 rounded-[2rem] border-2 transition-all active:scale-[0.98] ${
+            className={`group relative flex items-center p-5 rounded-[2rem] border-2 transition-all duration-500 ${
               isDone 
-                ? 'opacity-60 border-transparent bg-slate-50 dark:bg-slate-900/50' 
-                : 'border-slate-50 dark:border-white/5 shadow-sm hover:border-blue-100 dark:hover:border-blue-900/50'
+                ? 'opacity-40 border-transparent bg-slate-100/50 dark:bg-slate-900/30 scale-[0.97] grayscale select-none' 
+                : 'bg-white dark:bg-slate-900 border-slate-50 dark:border-white/5 shadow-sm hover:border-blue-100 dark:hover:border-blue-900/50 active:scale-[0.98]'
             }`}
           >
             <button 
               onClick={() => onToggle(item.id)}
               aria-label={actionLabel}
-              className={`mr-4 transition-all duration-300 transform ${
+              className={`mr-4 transition-all duration-500 transform ${
                 isDone 
-                  ? (type === 'RECEIVE' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400') + ' scale-110' 
-                  : 'text-slate-300 dark:text-slate-700 hover:text-blue-400 dark:hover:text-blue-500'
+                  ? (type === 'RECEIVE' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400') + ' scale-100' 
+                  : 'text-slate-300 dark:text-slate-700 hover:text-blue-400 dark:hover:text-blue-500 hover:scale-110'
               }`}
             >
               {isDone ? <CheckCircle2 size={32} strokeWidth={2.5} /> : <Circle size={32} strokeWidth={2} />}
@@ -55,20 +67,20 @@ export const PaymentList: React.FC<PaymentListProps> = ({ items, completedIds, o
             
             <div className="flex-1 min-w-0" onClick={() => onToggle(item.id)}>
               <div className="flex items-center gap-2">
-                <h3 className={`font-bold text-slate-900 dark:text-slate-100 truncate tracking-tight text-base ${isDone ? 'line-through decoration-2 opacity-50' : ''}`}>
+                <h3 className={`font-bold text-slate-900 dark:text-slate-100 truncate tracking-tight text-base transition-all ${isDone ? 'line-through decoration-2 opacity-50' : ''}`}>
                   {item.title}
                 </h3>
                 {isDone && (
-                  <span className={`text-[10px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded ${type === 'RECEIVE' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400'}`}>
-                    Recorded
+                  <span className="flex items-center gap-1 text-[9px] font-black uppercase tracking-tighter px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-500">
+                    <Lock size={10} /> Monthly Done
                   </span>
                 )}
               </div>
               <div className="flex items-center gap-3 mt-1">
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 flex items-center gap-1 uppercase tracking-wider">
+                <span className={`text-[10px] font-bold flex items-center gap-1 uppercase tracking-wider ${isDone ? 'text-slate-400' : 'text-slate-400 dark:text-slate-500'}`}>
                   <Calendar size={12} /> Day {item.dueDate}
                 </span>
-                <span className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-md uppercase">
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase ${isDone ? 'bg-slate-200/50 text-slate-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
                   {item.category}
                 </span>
               </div>
@@ -76,11 +88,16 @@ export const PaymentList: React.FC<PaymentListProps> = ({ items, completedIds, o
 
             <div className="flex items-center gap-4">
               <div className="text-right">
-                <div className={`text-base font-black tracking-tight ${type === 'RECEIVE' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                <div className={`text-base font-black tracking-tight transition-colors ${
+                  isDone 
+                    ? 'text-slate-400' 
+                    : (type === 'RECEIVE' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400')
+                }`}>
                   {type === 'RECEIVE' ? '+' : '-'}₹{item.amount.toLocaleString('en-IN')}
                 </div>
               </div>
-              <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              
+              <div className={`flex flex-col gap-2 transition-opacity ${isDone ? 'opacity-0 group-hover:opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                 <button 
                   onClick={(e) => { e.stopPropagation(); onEdit(item); }}
                   className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"

@@ -13,7 +13,8 @@ const INITIAL_STATE: AppState = {
   lastResetMonth: getMonthKey(),
   theme: 'light',
   user: null,
-  googleClientId: ''
+  googleClientId: '',
+  savedAccounts: []
 };
 
 const checkAndPerformReset = (state: AppState): AppState | null => {

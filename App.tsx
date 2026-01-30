@@ -8,7 +8,7 @@ import { BottomNav, TabType } from './components/BottomNav.tsx';
 import { AppState, PaymentItem, AuthUser } from './types.ts';
 import { RealtimeDB } from './services/realtimeDb.ts';
 import { getFinancialAdvice } from './services/geminiService.ts';
-import { Plus, Sparkles, Loader2, Sun, Moon, LogOut, User, ShieldCheck } from 'lucide-react';
+import { Plus, Sparkles, Loader2, Sun, Moon, LogOut, User, Shield, Wallet, Mail, Facebook, PlusCircle, ArrowLeft, CheckCircle2 } from 'lucide-react';
 
 const App: React.FC = () => {
   const [state, setState] = useState<AppState | null>(null);
@@ -17,7 +17,12 @@ const App: React.FC = () => {
   const [editingItem, setEditingItem] = useState<PaymentItem | null>(null);
   const [aiTips, setAiTips] = useState<string[]>([]);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [showMockPicker, setShowMockPicker] = useState(false);
+  
+  // Login UI states
+  const [showAccountPicker, setShowAccountPicker] = useState(false);
+  const [showAddAccount, setShowAddAccount] = useState(false);
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
 
   useEffect(() => {
     const unsubscribe = RealtimeDB.subscribe((newState) => {
@@ -86,71 +91,184 @@ const App: React.FC = () => {
     setEditingItem(null);
   };
 
-  const loginAs = (name: string, email: string, pic: string) => {
-    const user: AuthUser = { id: crypto.randomUUID(), name, email, picture: pic };
-    RealtimeDB.dispatch({ ...state, user });
-    setShowMockPicker(false);
+  const loginWithAccount = (user: AuthUser) => {
+    // Add to saved accounts if not already there
+    const accounts = state.savedAccounts || [];
+    const exists = accounts.find(a => a.email === user.email);
+    const updatedAccounts = exists ? accounts : [user, ...accounts];
+    
+    RealtimeDB.dispatch({ 
+      ...state, 
+      user, 
+      savedAccounts: updatedAccounts 
+    });
+    setShowAccountPicker(false);
+    setShowAddAccount(false);
+  };
+
+  const handleAddNewAccount = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUserName || !newUserEmail) return;
+    
+    const newUser: AuthUser = {
+      id: crypto.randomUUID(),
+      name: newUserName,
+      email: newUserEmail,
+      picture: `https://api.dicebear.com/7.x/avataaars/svg?seed=${newUserEmail}`
+    };
+    
+    loginWithAccount(newUser);
+    setNewUserName('');
+    setNewUserEmail('');
   };
 
   const renderLoginScreen = () => (
-    <div className="flex flex-col items-center justify-center min-h-screen px-6 py-12 animate-fade-in relative overflow-hidden bg-white dark:bg-slate-950 text-slate-900 dark:text-white">
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[30%] bg-blue-500/10 dark:bg-blue-600/5 blur-[120px] rounded-full -z-10" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[30%] bg-indigo-500/10 dark:bg-indigo-600/5 blur-[120px] rounded-full -z-10" />
-      
-      <div className="w-24 h-24 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[2.5rem] flex items-center justify-center text-white text-5xl font-black shadow-2xl mb-8 animate-float">
-        P
-      </div>
-      
-      <h1 className="text-4xl font-black tracking-tighter text-center mb-2">PayFlow Pro</h1>
-      <p className="text-slate-500 dark:text-slate-400 text-center mb-12 max-w-xs font-semibold leading-tight">
-        Your monthly payments, <span className="text-blue-600">securely synced</span>.
-      </p>
-
-      <div className="w-full max-w-sm space-y-4 animate-slide-up">
-        <button 
-          onClick={() => setShowMockPicker(true)}
-          className="w-full bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-white/5 py-4 rounded-[2rem] flex items-center justify-center gap-4 shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
-        >
-          <img src="https://www.google.com/favicon.ico" className="w-6 h-6" alt="Google" />
-          <span className="font-black">Sign in with Google</span>
-        </button>
+    <div className="min-h-screen bg-white dark:bg-slate-950 flex flex-col items-center animate-fade-in">
+      {/* Header section from screenshot */}
+      <div className="w-full h-1/3 bg-[#00c853] dark:bg-emerald-600 flex items-center justify-center relative overflow-hidden">
+        <div className="relative z-10 p-8 bg-white/20 rounded-[2.5rem] backdrop-blur-sm border border-white/30 shadow-2xl animate-float">
+          <div className="relative">
+            <Shield className="text-white w-24 h-24" strokeWidth={1.5} />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Wallet className="text-orange-500 w-10 h-10 mt-1" fill="currentColor" />
+            </div>
+          </div>
+        </div>
+        {/* Abstract background shapes */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-400/20 rounded-full -ml-16 -mb-16 blur-2xl" />
       </div>
 
-      <div className="mt-16 text-center space-y-1">
-        <p className="text-[10px] font-black uppercase text-slate-300 dark:text-slate-700 tracking-[0.2em]">Privacy First Architecture</p>
-        <p className="text-[9px] text-slate-400 dark:text-slate-600 font-medium">Your financial data stays with your account.</p>
+      <div className="flex-1 w-full max-w-sm px-8 pt-20 pb-12 flex flex-col items-center">
+        <h1 className="text-2xl font-bold text-slate-800 dark:text-white text-center leading-snug mb-12">
+          Sign in below to create a <br /> secure account.
+        </h1>
+
+        <div className="w-full space-y-4">
+          <button 
+            onClick={() => setShowAccountPicker(true)}
+            className="w-full bg-[#2196f3] text-white py-4 rounded-full flex items-center justify-center relative shadow-lg active:scale-95 transition-all overflow-hidden"
+          >
+            <div className="absolute left-2 bg-white w-12 h-12 rounded-full flex items-center justify-center">
+              <img src="https://www.google.com/favicon.ico" className="w-6 h-6" alt="G" />
+            </div>
+            <span className="font-bold text-xs tracking-wider uppercase pl-6">Connect with Google</span>
+          </button>
+
+          <button 
+            onClick={() => setShowAccountPicker(true)}
+            className="w-full bg-[#1877f2] text-white py-4 rounded-full flex items-center justify-center relative shadow-lg active:scale-95 transition-all overflow-hidden"
+          >
+            <div className="absolute left-2 bg-white w-12 h-12 rounded-full flex items-center justify-center">
+              <Facebook className="text-[#1877f2] w-7 h-7" fill="currentColor" />
+            </div>
+            <span className="font-bold text-xs tracking-wider uppercase pl-6">Connect with Facebook</span>
+          </button>
+
+          <button 
+            onClick={() => {
+              setShowAccountPicker(true);
+              setShowAddAccount(true);
+            }}
+            className="w-full bg-[#00c853] text-white py-4 rounded-full flex items-center justify-center relative shadow-lg active:scale-95 transition-all overflow-hidden"
+          >
+            <div className="absolute left-2 bg-white w-12 h-12 rounded-full flex items-center justify-center">
+              <Mail className="text-[#00c853] w-6 h-6" />
+            </div>
+            <span className="font-bold text-xs tracking-wider uppercase pl-6">Sign in using Email</span>
+          </button>
+        </div>
+
+        <div className="mt-auto pt-12 text-center">
+          <p className="text-[10px] text-slate-400 dark:text-slate-600 leading-relaxed max-w-[280px] mx-auto">
+            By signing up or connecting with the services above you agree to our <a href="#" className="text-blue-500 underline">Terms of Services</a> and acknowledge our <a href="#" className="text-blue-500 underline">Privacy Policy</a> describing how we handle your personal data.
+          </p>
+        </div>
       </div>
 
-      {showMockPicker && (
+      {/* Choose an account dialog - High fidelity recreation */}
+      {showAccountPicker && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-xs rounded-[2.5rem] p-8 shadow-2xl animate-scale-in">
-            <div className="flex flex-col items-center mb-6">
-              <img src="https://www.google.com/favicon.ico" className="w-8 h-8 mb-4" alt="Google" />
-              <h2 className="text-lg font-black text-slate-900 dark:text-white text-center">Choose an account</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">to continue to PayFlow Pro</p>
-            </div>
-            
-            <div className="space-y-3">
-              <button 
-                onClick={() => loginAs("User", "user@gmail.com", "https://api.dicebear.com/7.x/avataaars/svg?seed=User")}
-                className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border border-transparent hover:border-slate-100 dark:hover:border-white/5 text-left"
-              >
-                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
-                   <User size={20} />
+          <div className="bg-white dark:bg-slate-900 w-full max-w-xs rounded-3xl shadow-2xl overflow-hidden animate-scale-in">
+            {showAddAccount ? (
+              <div className="p-8">
+                <div className="flex items-center gap-2 mb-6 text-slate-400 cursor-pointer hover:text-slate-600 transition-colors" onClick={() => setShowAddAccount(false)}>
+                  <ArrowLeft size={16} />
+                  <span className="text-xs font-bold">Back</span>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-bold text-slate-900 dark:text-white truncate">Google User</p>
-                  <p className="text-[10px] text-slate-500 truncate">user@gmail.com</p>
-                </div>
-              </button>
-            </div>
+                <h2 className="text-lg font-black text-slate-900 dark:text-white mb-2">Create Account</h2>
+                <p className="text-xs text-slate-500 mb-6 font-medium">Use your real Google identity info.</p>
+                <form onSubmit={handleAddNewAccount} className="space-y-4">
+                  <input 
+                    type="text" 
+                    placeholder="Full Name" 
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-white/5 outline-none focus:ring-2 focus:ring-emerald-500 text-sm dark:text-white"
+                    value={newUserName}
+                    onChange={(e) => setNewUserName(e.target.value)}
+                    required
+                  />
+                  <input 
+                    type="email" 
+                    placeholder="Google Email Address" 
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-white/5 outline-none focus:ring-2 focus:ring-emerald-500 text-sm dark:text-white"
+                    value={newUserEmail}
+                    onChange={(e) => setNewUserEmail(e.target.value)}
+                    required
+                  />
+                  <button type="submit" className="w-full py-3 bg-[#00c853] text-white font-bold rounded-xl shadow-lg active:scale-95 transition-all">
+                    Sign In
+                  </button>
+                </form>
+              </div>
+            ) : (
+              <div className="p-0">
+                <div className="p-8 flex flex-col items-center">
+                  <div className="w-12 h-12 bg-[#00c853] rounded-xl flex items-center justify-center text-white mb-4 shadow-lg">
+                    <Wallet size={24} />
+                  </div>
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-1">Choose an account</h2>
+                  <p className="text-xs text-slate-500 mb-6">to continue to Wallet</p>
 
-            <button 
-              onClick={() => setShowMockPicker(false)}
-              className="mt-6 w-full py-3 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-            >
-              Cancel
-            </button>
+                  <div className="w-full space-y-1">
+                    {(state.savedAccounts || []).map(acc => (
+                      <button 
+                        key={acc.id}
+                        onClick={() => loginWithAccount(acc)}
+                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left border-b border-slate-50 dark:border-white/5 last:border-0"
+                      >
+                        <img src={acc.picture} className="w-8 h-8 rounded-full border border-slate-100 dark:border-slate-700" alt="" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{acc.name}</p>
+                          <p className="text-[10px] text-slate-500 truncate">{acc.email}</p>
+                        </div>
+                      </button>
+                    ))}
+
+                    <button 
+                      onClick={() => setShowAddAccount(true)}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+                        <PlusCircle size={20} />
+                      </div>
+                      <span className="text-sm font-bold text-slate-600 dark:text-slate-400">Add another account</span>
+                    </button>
+                  </div>
+
+                  <div className="mt-8 pt-6 border-t border-slate-50 dark:border-white/5 w-full">
+                    <p className="text-[10px] text-slate-400 text-center leading-relaxed">
+                      To continue, Google will share your name, email address, and profile picture with Wallet.
+                    </p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setShowAccountPicker(false)}
+                  className="w-full py-4 text-xs font-bold text-slate-300 hover:text-slate-500 transition-colors border-t border-slate-50 dark:border-white/5"
+                >
+                  CANCEL
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -210,11 +328,7 @@ const App: React.FC = () => {
   };
 
   if (!state.user) {
-    return (
-      <div className="app-container min-h-screen bg-[#fbfcfe] dark:bg-[#020617] transition-colors duration-500">
-        {renderLoginScreen()}
-      </div>
-    );
+    return renderLoginScreen();
   }
 
   return (

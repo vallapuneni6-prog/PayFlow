@@ -25,4 +25,5 @@ export interface AppState {
   theme: ThemeType;
   user?: AuthUser | null;
   googleClientId?: string;
+  savedAccounts?: AuthUser[];
 }
